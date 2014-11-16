@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.homepage = 'https://github.com/rs/SDWebImage'
   s.author = { 'Olivier Poitrey' => 'rs@dailymotion.com' }
   s.source = { :git => 'https://github.com/rs/SDWebImage.git', :tag => s.version.to_s }
-  s.dependency = 'FMDB/standalone/FTS', '~>2.4'
+  s.dependency 'FMDB/standalone/FTS', '~>2.4'
   s.description = 'This library provides a category for UIImageView with support for remote '      \
                   'images coming from the web. It provides an UIImageView category adding web '    \
                   'image and cache management to the Cocoa Touch framework, an asynchronous '      \
