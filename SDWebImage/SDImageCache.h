@@ -74,6 +74,18 @@ typedef void(^SDWebImageCalculateSizeBlock)(NSUInteger fileCount, NSUInteger tot
 - (void)addReadOnlyCachePath:(NSString *)path;
 
 /**
+ * Add a read-only sqlite database path to search for images pre-cached by SDImageCache
+ * Useful if you want to bundle many many pre-loaded images with your app and the
+ * file system just wont cut it.
+ *
+ * @param path The path where the db is located
+ * @param tableName The name of the database table where data lives
+ * @param keyColumn The name of the column resembling our key (VARCHAR, should have a unique index)
+ * @param contentColumn The name of the column where our image data lives (BLOB column)
+ */
+- (void)setCacheDBPath:(NSString *)path table:(NSString*)tableName keyColumn:(NSString*)keyColumn contentColumn:(NSString*)contentColumn;
+
+/**
  * Store an image into memory and disk cache at the given key.
  *
  * @param image The image to store

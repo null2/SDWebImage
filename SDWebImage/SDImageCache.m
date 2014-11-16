@@ -11,6 +11,9 @@
 #import "SDWebImageDecoder.h"
 #import "UIImage+MultiFormat.h"
 #import <CommonCrypto/CommonDigest.h>
+#import "FMDatabaseQueue.h"
+#import "FMDatabase.h"
+#import "FMResultSet.h"
 
 static const NSInteger kDefaultCacheMaxCacheAge = 60 * 60 * 24 * 7; // 1 week
 // PNG signature bytes and data (below)
@@ -35,6 +38,12 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
 @property (strong, nonatomic) NSCache *memCache;
 @property (strong, nonatomic) NSString *diskCachePath;
 @property (strong, nonatomic) NSMutableArray *customPaths;
+//@property (strong, nonatomic) NSString *dbPath;
+//@property (strong, nonatomic) NSString *tableName;
+//@property (strong, nonatomic) NSString *keyColumn;
+//@property (strong, nonatomic) NSString *contentColumn;
+@property (strong, nonatomic) FMDatabaseQueue *dbQueue;
+@property (strong, nonatomic) NSString *dbQuery;
 @property (SDDispatchQueueSetterSementics, nonatomic) dispatch_queue_t ioQueue;
 
 @end
@@ -116,6 +125,24 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
         [self.customPaths addObject:path];
     }
 }
+
+- (void)setCacheDBPath:(NSString *)path table:(NSString*)tableName keyColumn:(NSString*)keyColumn contentColumn:(NSString*)contentColumn {
+  NSFileManager* fm = [NSFileManager defaultManager];
+  if (! [fm fileExistsAtPath:path]) {
+    self.dbQueue = nil;
+    self.dbQuery = nil;
+    return;
+  }
+  self.dbQueue = [FMDatabaseQueue databaseQueueWithPath:path];
+  [self.dbQueue inDatabase:^(FMDatabase* db) {
+    [db setShouldCacheStatements:YES];
+    [db setTraceExecution:NO];
+    [db setLogsErrors:YES];
+    [db setMaxBusyRetryTimeInterval:5000];
+  }];
+  self.dbQuery = [NSString stringWithFormat:@"SELECT %@ FROM %@ where %@=? LIMIT 1", contentColumn, tableName, keyColumn];
+}
+
 
 - (NSString *)cachePathForKey:(NSString *)key inPath:(NSString *)path {
     NSString *filename = [self cachedFileNameForKey:key];
@@ -255,6 +282,21 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
         if (imageData) {
             return imageData;
         }
+    }
+
+    // check in the db as well
+    if (self.dbQueue != nil) {
+      __block NSData* imgData;
+      [self.dbQueue inDatabase:^(FMDatabase *db) {
+        FMResultSet* rs = [db executeQuery:@"SELECT content FROM sample_caches WHERE href=? LIMIT 1", key];
+        if ([rs next]) {
+          imgData = [rs dataForColumnIndex:0];
+        }
+        [rs close];
+      }];
+      if (imgData) {
+        return imgData;
+      }
     }
 
     return nil;
