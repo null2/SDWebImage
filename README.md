@@ -1,3 +1,8 @@
+Fork description
+================
+
+This fork introduces an optional sqlite database for preparing cache data in the application bundle. The need arose when I discovered that I would need to package around 20.000 files in the app bundle. Not really practical, and the file limit for an IPA is around 64000 files. Plus, if the files are small (usually under 1k), the overhead increases the needed disk space significantly. In my case I needed around 70MB with single files and around 20MB for data inside an sqlite db.
+
 Web Image
 =========
 [![Build Status](http://img.shields.io/travis/rs/SDWebImage/master.svg?style=flat)](https://travis-ci.org/rs/SDWebImage)
